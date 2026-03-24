@@ -51,37 +51,36 @@ For a detailed explanation, see:
 ---
 
 ## Project Structure
-docs/
-├── PROJECT_OUTLINE.md
-└── architecture/
-├── runtime/
-└── delivery/
 
-infra/
-├── modules/
-│   ├── vpc/
-│   ├── eks/
-│   ├── rds/
-│   └── ecr/
-├── envs/
-│   ├── dev/
-│   ├── staging/
-│   └── prod/
-└── terraform.tfvars
-
-apps/
-├── api-gateway/
-├── auth-service/
-├── user-service/
-└── product-service/
-
-ci/
-├── github-actions/
-
-gitops/
-├── argocd/
-└── manifests/
-
-observability/
-├── prometheus/
-└── grafana/
+```text
+.
+├── docs/
+│   ├── PROJECT_OUTLINE.md
+│   └── architecture/
+│       ├── runtime/
+│       └── delivery/
+├── infra/
+│   ├── modules/
+│   │   ├── vpc/
+│   │   ├── eks/
+│   │   ├── rds/
+│   │   └── ecr/
+│   ├── envs/
+│   │   ├── dev/
+│   │   ├── staging/
+│   │   └── prod/
+│   └── terraform.tfvars
+├── apps/
+│   ├── api-gateway/
+│   ├── auth-service/
+│   ├── user-service/
+│   └── product-service/
+├── ci/
+│   └── github-actions/
+├── gitops/
+│   ├── argocd/
+│   └── manifests/
+└── observability/
+    ├── prometheus/
+    └── grafana/
+```
