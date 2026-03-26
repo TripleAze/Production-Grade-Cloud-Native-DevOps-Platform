@@ -10,36 +10,30 @@ This document explains the system architecture of the platform, including runtim
 
 The system follows a microservices-based architecture deployed on Amazon EKS.
 
-### Components
+### Architecture Overview
 
-- **Users / Clients**
-  - External users interacting with the platform
-
-- **Load Balancer / Ingress**
-  - Entry point for incoming traffic
-
-- **API Gateway**
-  - Handles routing and request control
-
-- **Kubernetes Cluster (EKS)**
-  - Orchestrates containerized services
-
-- **Microservices**
-  - Order Service
-  - Inventory Service
-  - Notification Service
-
-- **Database (RDS)**
-  - Persistent storage layer
-
-- **ECR**
-  - Stores container images
-
-- **AWS Secrets Manager**
-  - Manages sensitive configuration
-
-- **Prometheus & Grafana**
-  - Monitoring and visualization
+```
+Users / Clients
+        │
+        ▼
+Load Balancer / Ingress
+        │
+        ▼
+   API Gateway
+        │
+        ▼
+Kubernetes Cluster (EKS)
+  ├── Order Service ──────────────┐
+  ├── Inventory Service ──────────┼──► Database (RDS)
+  └── Notification Service ───────┘
+        │                              │
+        ▼                              ▼
+  ECR (Container Images)     Secrets Manager
+        │
+        ▼
+Prometheus & Grafana
+  (Monitoring & Visualization)
+```
 
 ---
 
