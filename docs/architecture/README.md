@@ -16,19 +16,18 @@ The system follows a microservices-based architecture deployed on Amazon EKS.
 Users / Clients
         │
         ▼
-Load Balancer / Ingress
-        │
-        ▼
-   API Gateway
+Load Balancer / Ingress (ALB)
         │
         ▼
 Kubernetes Cluster (EKS)
-  ├── Order Service ──────────────┐
-  ├── Inventory Service ──────────┼──► Database (RDS)
-  └── Notification Service ───────┘
-        │                              │
-        ▼                              ▼
-  ECR (Container Images)     Secrets Manager
+  ├── Gateway Service ─────────────────────────────────┐
+  │     (routes to internal microservices)             │
+  ├── User Management Service ──────────────────────┐  │
+  ├── Course Management Service ────────────────────┼──► Database (RDS)
+  └── Enrollments Management Service ───────────────┘
+        │                                               │
+        ▼                                               ▼
+  ECR (Container Images)                       Secrets Manager
         │
         ▼
 Prometheus & Grafana
