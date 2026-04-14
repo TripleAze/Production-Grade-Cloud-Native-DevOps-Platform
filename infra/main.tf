@@ -20,6 +20,9 @@ module "vpc" {
   private_subnet_tags = {
     "kubernetes.io/role/internal-elb" = 1
   }
+  tags = {
+    Name = "solo-devops-vpc"
+  }
 }
 
 module "eks" {
@@ -32,10 +35,10 @@ module "eks" {
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
 
-  cluster_endpoint_public_access  = true
-  cluster_endpoint_private_access = true
+  endpoint_public_access  = true
+  endpoint_private_access = true
 
-  cluster_addons = {
+  addons = {
     coredns    = {}
     kube-proxy = {}
     vpc-cni    = {}
@@ -43,20 +46,9 @@ module "eks" {
 
   enable_cluster_creator_admin_permissions = true
 
-  eks_managed_node_groups = {
-    default = {
-      instance_types = [var.instance_type]
-      min_size       = var.min_size
-      max_size       = var.max_size
-      desired_size   = var.desired_size
-
-      vpc_id     = module.vpc.vpc_id
-      subnet_ids = module.vpc.private_subnets
-
-      iam_role_additional_policies = {
-        AmazonEKS_CNI_Policy = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-      }
-    }
+  compute_config = {
+    enabled    = true
+    node_pools = ["general-purpose"]
   }
 
   tags = {
@@ -80,6 +72,36 @@ module "load_balancer_controller_irsa_role" {
   }
 }
 
+resource "helm_release" "aws_lbc" {
+  name       = "aws-load-balancer-controller"
+  repository = "https://aws.github.io/eks-charts"
+  chart      = "aws-load-balancer-controller"
+  namespace  = "kube-system"
+
+  set = [
+    {
+      name  = "clusterName"
+      value = module.eks.cluster_name
+    },
+    {
+      name  = "serviceAccount.create"
+      value = "false"
+    },
+    {
+      name  = "serviceAccount.name"
+      value = "aws-load-balancer-controller"
+    },
+    {
+      name  = "region"
+      value = "us-east-1"
+    },
+    {
+      name  = "vpcId"
+      value = module.vpc.vpc_id
+    },
+  ]
+}
+
 module "external_secrets_irsa_role" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "~> 5.30"
@@ -95,6 +117,28 @@ module "external_secrets_irsa_role" {
   }
 }
 
+
+resource "aws_route53_zone" "primary" {
+  name = "abu-production.chickenkiller.com" 
+}
+
+# Generate SSL Cert using the standard module
+module "acm" {
+  source  = "terraform-aws-modules/acm/aws"
+  version = "~> 5.0"
+
+  domain_name = aws_route53_zone.primary.name
+  zone_id     = aws_route53_zone.primary.zone_id
+
+  # Validates the cert automatically via Route 53
+  validation_method = "DNS"
+
+  subject_alternative_names = [
+    "*.${aws_route53_zone.primary.name}",
+  ]
+
+  wait_for_validation = true
+}
 
 module "rds" {
   source  = "terraform-aws-modules/rds/aws"
@@ -175,7 +219,6 @@ module "ecr" {
 
   repository_name = var.ecr_name
 
-  repository_read_write_access_arns = [module.eks.cluster_primary_security_group_id]
   repository_image_scan_on_push     = var.ecr_scan_on_push
   repository_lifecycle_policy       = var.ecr_lifecycle_policy
 
@@ -190,6 +233,8 @@ module "secrets_manager" {
   name_prefix             = var.secrets_manager_name_prefix
   description             = var.secrets_manager_description
   recovery_window_in_days = var.secrets_manager_recovery_window_in_days
+
+  secret_string = "{}"
 
   tags = {
     Environment = "Development"

@@ -9,12 +9,7 @@ private_subnets = ["70.0.1.0/24", "70.0.2.0/24"]
 public_subnets  = ["70.0.101.0/24", "70.0.102.0/24"]
 
 cluster_name       = "solo-devops-eks"
-kubernetes_version = "1.33"
-
-instance_type = "t3.medium"
-min_size      = 1
-max_size      = 3
-desired_size  = 2
+kubernetes_version = "1.35"
 
 environment = "dev"
 project     = "solo-devops"

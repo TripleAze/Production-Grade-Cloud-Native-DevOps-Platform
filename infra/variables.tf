@@ -30,22 +30,6 @@ variable "kubernetes_version" {
   type = string
 }
 
-variable "instance_type" {
-  type = string
-}
-
-variable "min_size" {
-  type = number
-}
-
-variable "max_size" {
-  type = number
-}
-
-variable "desired_size" {
-  type = number
-}
-
 variable "environment" {
   type = string
 }

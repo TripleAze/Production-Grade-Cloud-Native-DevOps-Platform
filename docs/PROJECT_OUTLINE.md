@@ -87,3 +87,11 @@ This objective directly supports subsequent project deliverables, including:
 - CI/CD pipeline implementation  
 - GitOps deployment configuration  
 - Observability and monitoring setup  
+
+
+
+
+
+
+
+aws eks update-kubeconfig --region us-east-1 --name payday-cluster --profile kadri
