@@ -1,0 +1,8 @@
+py-ms[all]>=2.6.1
+Flask<2.2.0
+Werkzeug<2.1.0
+Flask-SocketIO>=5.0.0
+eventlet
+Flask-SQLAlchemy<3.0
+SQLAlchemy<1.5.0
+mysql-connector-python

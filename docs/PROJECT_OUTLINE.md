@@ -95,3 +95,4 @@ This objective directly supports subsequent project deliverables, including:
 
 
 aws eks update-kubeconfig --region us-east-1 --name payday-cluster --profile kadri
+kubectl get ingress chat-ingress

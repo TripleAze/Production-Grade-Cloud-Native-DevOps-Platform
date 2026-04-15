@@ -57,51 +57,6 @@ module "eks" {
   }
 }
 
-module "load_balancer_controller_irsa_role" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "~> 5.30"
-
-  role_name                              = "aws-load-balancer-controller"
-  attach_load_balancer_controller_policy = true
-
-  oidc_providers = {
-    main = {
-      provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["kube-system:aws-load-balancer-controller"]
-    }
-  }
-}
-
-resource "helm_release" "aws_lbc" {
-  name       = "aws-load-balancer-controller"
-  repository = "https://aws.github.io/eks-charts"
-  chart      = "aws-load-balancer-controller"
-  namespace  = "kube-system"
-
-  set = [
-    {
-      name  = "clusterName"
-      value = module.eks.cluster_name
-    },
-    {
-      name  = "serviceAccount.create"
-      value = "false"
-    },
-    {
-      name  = "serviceAccount.name"
-      value = "aws-load-balancer-controller"
-    },
-    {
-      name  = "region"
-      value = "us-east-1"
-    },
-    {
-      name  = "vpcId"
-      value = module.vpc.vpc_id
-    },
-  ]
-}
-
 module "external_secrets_irsa_role" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "~> 5.30"
@@ -117,9 +72,24 @@ module "external_secrets_irsa_role" {
   }
 }
 
+module "load_balancer_controller_irsa_role" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.30"
+
+  role_name                              = "aws-load-balancer-controller"
+  attach_load_balancer_controller_policy = true
+
+  oidc_providers = {
+    main = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["kube-system:aws-load-balancer-controller"]
+    }
+  }
+}
+
 
 resource "aws_route53_zone" "primary" {
-  name = "abu-production.chickenkiller.com" 
+  name = "abu-eks.cloud-ip.cc"
 }
 
 # Generate SSL Cert using the standard module
@@ -222,6 +192,8 @@ module "ecr" {
   repository_image_scan_on_push     = var.ecr_scan_on_push
   repository_lifecycle_policy       = var.ecr_lifecycle_policy
 
+  repository_image_tag_mutability = "MUTABLE"
+
   tags = var.ecr_tags
 }
 
@@ -240,4 +212,23 @@ module "secrets_manager" {
     Environment = "Development"
     Project     = "Example"
   }
+}
+resource "aws_security_group_rule" "ingress_load_balancer" {
+  type              = "ingress"
+  from_port         = 80
+  to_port           = 80
+  protocol          = "tcp"
+  cidr_blocks       = [var.vpc_cidr]
+  security_group_id = module.eks.cluster_primary_security_group_id
+  description       = "Allow ALB to talk to Pods on port 80"
+}
+
+resource "aws_security_group_rule" "ingress_load_balancer_api" {
+  type              = "ingress"
+  from_port         = 8080
+  to_port           = 8080
+  protocol          = "tcp"
+  cidr_blocks       = [var.vpc_cidr]
+  security_group_id = module.eks.cluster_primary_security_group_id
+  description       = "Allow ALB to talk to Pods on port 8080"
 }

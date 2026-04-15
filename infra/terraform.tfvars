@@ -63,6 +63,6 @@ ecr_tags = {
 }
 
 # Secrets Manager values
-secrets_manager_name_prefix             = "rotated-example"
-secrets_manager_description             = "Rotated example Secrets Manager secret"
+secrets_manager_name_prefix             = "solo-devops-rds-secret"
+secrets_manager_description             = "Rotated Secrets Manager secret"
 secrets_manager_recovery_window_in_days = 7
