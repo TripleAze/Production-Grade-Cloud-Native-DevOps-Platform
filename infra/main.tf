@@ -14,11 +14,11 @@ module "vpc" {
   one_nat_gateway_per_az = false
 
   public_subnet_tags = {
-    "kubernetes.io/role/elb" = 1
+    "kubernetes.io/role/elb" = 1 # for alb controller to identify where to create alb
   }
 
   private_subnet_tags = {
-    "kubernetes.io/role/internal-elb" = 1
+    "kubernetes.io/role/internal-elb" = 1 # for alb controller to identify where to create internal alb
   }
   tags = {
     Name = "solo-devops-vpc"
@@ -126,6 +126,7 @@ module "rds" {
   port     = var.port
 
   iam_database_authentication_enabled = true
+  manage_master_user_password         = true
 
   vpc_security_group_ids = [module.eks.cluster_primary_security_group_id]
 
@@ -197,22 +198,8 @@ module "ecr" {
   tags = var.ecr_tags
 }
 
-# secret manager
-module "secrets_manager" {
-  source = "terraform-aws-modules/secrets-manager/aws"
-
-  # Secret
-  name_prefix             = var.secrets_manager_name_prefix
-  description             = var.secrets_manager_description
-  recovery_window_in_days = var.secrets_manager_recovery_window_in_days
-
-  secret_string = "{}"
-
-  tags = {
-    Environment = "Development"
-    Project     = "Example"
-  }
-}
+# RDS-managed secrets handle individual attributes like username, password, host, and dbname
+# so i no longer need a manually provisioned Secrets Manager module here.
 resource "aws_security_group_rule" "ingress_load_balancer" {
   type              = "ingress"
   from_port         = 80

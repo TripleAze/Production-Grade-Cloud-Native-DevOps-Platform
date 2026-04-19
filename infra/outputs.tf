@@ -32,3 +32,8 @@ output "db_instance_endpoint" {
   description = "RDS instance endpoint"
   value       = module.rds.db_instance_endpoint
 }
+
+output "db_master_user_secret_arn" {
+  description = "The ARN of the RDS-managed secret"
+  value       = module.rds.db_instance_master_user_secret_arn
+}

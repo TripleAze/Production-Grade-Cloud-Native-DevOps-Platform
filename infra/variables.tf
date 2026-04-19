@@ -123,16 +123,6 @@ variable "ecr_tags" {
   type = map(string)
 }
 
-# Secrets Manager Variables
-variable "secrets_manager_name_prefix" {
-  type = string
-}
-
-variable "secrets_manager_description" {
-  type = string
-}
-
-variable "secrets_manager_recovery_window_in_days" {
-  type = number
-}
+# RDS-managed secret attributes are handled automatically.
+# Legacy Secrets Manager variables removed.
 
