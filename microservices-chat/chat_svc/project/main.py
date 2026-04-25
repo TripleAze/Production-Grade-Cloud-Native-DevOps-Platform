@@ -102,6 +102,10 @@ def create_app():
     return the app and the database objects.
     :return:
     """
+    import os
+    db_uri = os.environ.get("SQLALCHEMY_DATABASE_URI")
+    if db_uri:
+        app.config["SQLALCHEMY_DATABASE_URI"] = db_uri
     db.init_app(app)
     with app.app_context():
         db.create_all()  # Simple schema initialization for RDS

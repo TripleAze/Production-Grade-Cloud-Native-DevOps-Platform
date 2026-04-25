@@ -1,7 +1,8 @@
 # VPC and EKS values
 vpc_name   = "solo-devops-vpc"
 vpc_cidr   = "70.0.0.0/16"
-aws_region = "us-east-1"
+aws_region  = "us-east-1"
+domain_name = "abu-eks.cloud-ip.cc"
 
 azs = ["us-east-1a", "us-east-1b"]
 
@@ -13,26 +14,6 @@ kubernetes_version = "1.35"
 
 environment = "dev"
 project     = "solo-devops"
-
-# RDS values
-db_name                = "abudb"
-username               = "user"
-port                   = 3306
-instance_class         = "db.t3.micro"
-allocated_storage      = 5
-backup_window          = "03:00-06:00"
-maintenance_window     = "Mon:00:00-Mon:03:00"
-monitoring_interval    = "30"
-monitoring_role_name   = "MyRDSMonitoringRole"
-create_db_subnet_group = true
-
-family                 = "mysql8.0"
-engine                 = "mysql"
-engine_version         = "8.0"
-major_engine_version   = "8.0"
-deletion_protection    = false
-create_monitoring_role = true
-
 
 # ECR values
 ecr_name         = "solo-devops"

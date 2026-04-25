@@ -2,11 +2,15 @@ version: '3.8'
 
 services:
   chat-db:
-    build:
-      context: ./chat_db
+    image: mysql:8.0
     container_name: chat-db
+    environment:
+      MYSQL_ROOT_PASSWORD: super_secret_root_password
+      MYSQL_DATABASE: abudb
+      MYSQL_USER: user
+      MYSQL_PASSWORD: database_password
     ports:
-      - "8081:8080"
+      - "3307:3306"
     networks:
       - chat-net
 
@@ -14,13 +18,19 @@ services:
     build:
       context: ./chat_svc
     container_name: chat-svc
+    environment:
+      DB_HOST: chat-db
+      DB_USER: user
+      DB_PASSWORD: database_password
+      DB_NAME: abudb
+      DB_PORT: 3306
+      SQLALCHEMY_DATABASE_URI: "mysql+mysqlconnector://user:database_password@chat-db:3306/abudb"
     ports:
       - "8082:8080"
     networks:
       - chat-net
     depends_on:
       - chat-db
-    
 
   chat-front:
     build:
@@ -28,6 +38,8 @@ services:
     container_name: chat-front
     ports:
       - "8080:8080"
+    volumes:
+      - ./chat_front/config-docker.yml:/microservice/config-docker.yml:ro
     networks:
       - chat-net
     depends_on:
