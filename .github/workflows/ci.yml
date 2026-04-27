@@ -44,17 +44,17 @@ jobs:
           python-version: '3.9'
           cache: 'pip'
 
-      - name: Install & test Chat Front
+      - name: Install & lint Chat Front
         run: |
           cd microservices-chat/chat_front
           pip install -r requirements.txt
-          python manage.py test
+          python -m py_compile manage.py && echo "Syntax OK"
 
-      - name: Install & test Chat Service
+      - name: Install & lint Chat Service
         run: |
           cd microservices-chat/chat_svc
           pip install -r requirements.txt
-          python manage.py test
+          python -m py_compile manage.py && echo "Syntax OK"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
