@@ -100,11 +100,19 @@ jobs:
           output: trivy-svc.sarif
           severity: CRITICAL,HIGH
 
-      - name: Upload Trivy Results
+      - name: Upload Trivy Results (chat-front)
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: . # upload all sarif files in the root
+          sarif_file: trivy-front.sarif
+          category: trivy-chat-front
+
+      - name: Upload Trivy Results (chat-svc)
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-svc.sarif
+          category: trivy-chat-svc
 
       - name: Push Chat Front to ECR
         uses: docker/build-push-action@v5
