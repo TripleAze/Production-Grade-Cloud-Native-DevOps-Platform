@@ -1,11 +1,10 @@
-kind: Service
 apiVersion: v1
 kind: Service
 metadata:
-  name: template
+  name: chat-db
 spec:
   selector:
-    app: template
+    app: chat-db
   ports:
   - protocol: TCP
     port: 5000
@@ -13,20 +12,22 @@ spec:
   type: LoadBalancer
   externalTrafficPolicy: "Local"
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: template
+  name: chat-db
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: template
+        app: chat-db
     spec:
       containers:
-        - name: template
-          image: template:v1
+        - name: chat-db
+          image: chat-db:latest
+          securityContext:
+            allowPrivilegeEscalation: false
           ports:
             - name: http
               containerPort: 5000
@@ -39,12 +40,12 @@ spec:
       volumes:
         - name: ms-config-volume
           configMap:
-            name: template-configmap
+            name: chat-db-configmap
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: template-configmap
+  name: chat-db-configmap
 data:
   # When the config map is mounted as a volume, these will be created as files.
   config.yaml: |-
@@ -58,11 +59,18 @@ data:
       DATABASE: db.sqlite3
       SQLALCHEMY_DATABASE_URI: sqlite:////microservice/database/db.sqlite3
 ---
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: ingress
+  name: chat-db-ingress
 spec:
-  backend:
-    serviceName: template
-    servicePort: 5000
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: chat-db
+            port:
+              number: 5000
