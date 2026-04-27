@@ -272,4 +272,4 @@ jobs:
             [ "$STATUS" = "Synced/Healthy" ] && exit 0
             sleep 15
           done
-          echo "Production sync timed out" && exit 1
+          echo "Production sync timed out oh" && exit 1

@@ -1,0 +1,44 @@
+# SSH Keys — NEVER commit private keys
+infra/github-ci-deploy-key
+infra/github-ci-deploy-key.pub
+*id_rsa
+*id_ed25519
+*.pem
+
+# Terraform
+infra/.terraform/
+infra/tfplan
+infra/*.tfplan
+infra/terraform.tfstate
+infra/terraform.tfstate.backup
+infra/.terraform.lock.hcl
+infra/crash.log
+infra/.terraform.tfstate.lock.info
+
+# Secrets / environment files
+*.env
+.env.*
+secrets/
+*.secret
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+*.egg
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.claude/
