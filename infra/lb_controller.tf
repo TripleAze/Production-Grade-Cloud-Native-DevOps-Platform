@@ -24,10 +24,11 @@ resource "helm_release" "aws_lb_controller" {
   namespace  = "kube-system"
   version    = "1.7.2"
 
-  # Use values for better compatibility if 'set' blocks are failing
   values = [
     jsonencode({
       clusterName = module.eks.cluster_name
+      region      = var.aws_region
+      vpcId       = module.vpc.vpc_id
       serviceAccount = {
         create = true
         name   = "aws-load-balancer-controller"
