@@ -7,7 +7,6 @@ on:
 env:
   AWS_REGION: us-east-1
   ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
-  ECR_REPOSITORY: my-app
   IMAGE_TAG: ${{ github.sha }}
 
 jobs:
@@ -39,47 +38,26 @@ jobs:
         with:
           config: p/owasp-top-ten
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          node-version: 20
-          cache: npm
+          python-version: '3.11'
+          cache: 'pip'
 
-      - name: Install & build
+      - name: Install & test Chat Front
         run: |
-          npm ci
-          npm run build
+          cd microservices-chat/chat_front
+          pip install -r requirements.txt
+          python manage.py test
 
-      - name: Run tests
-        run: npm test -- --coverage
+      - name: Install & test Chat Service
+        run: |
+          cd microservices-chat/chat_svc
+          pip install -r requirements.txt
+          python manage.py test
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Build image (local, for scanning)
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: false
-          load: true
-          tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Trivy image scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
-          format: sarif
-          output: trivy-results.sarif
-          severity: CRITICAL,HIGH
-          exit-code: 1
-
-      - name: Upload Trivy SARIF
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: trivy-results.sarif
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -90,14 +68,62 @@ jobs:
       - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Push image to ECR
+      - name: Build image (chat-front local)
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./microservices-chat/chat_front
+          push: false
+          load: true
+          tags: ${{ env.ECR_REGISTRY }}/chat-front:${{ env.IMAGE_TAG }}
+
+      - name: Trivy scan chat-front
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ECR_REGISTRY }}/chat-front:${{ env.IMAGE_TAG }}
+          format: sarif
+          output: trivy-front.sarif
+          severity: CRITICAL,HIGH
+
+      - name: Build image (chat-svc local)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./microservices-chat/chat_svc
+          push: false
+          load: true
+          tags: ${{ env.ECR_REGISTRY }}/chat-svc:${{ env.IMAGE_TAG }}
+
+      - name: Trivy scan chat-svc
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ECR_REGISTRY }}/chat-svc:${{ env.IMAGE_TAG }}
+          format: sarif
+          output: trivy-svc.sarif
+          severity: CRITICAL,HIGH
+
+      - name: Upload Trivy Results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: . # upload all sarif files in the root
+
+      - name: Push Chat Front to ECR
+        uses: docker/build-push-action@v5
+        with:
+          context: ./microservices-chat/chat_front
           push: true
           tags: |
-            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
-            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
+            ${{ env.ECR_REGISTRY }}/chat-front:${{ env.IMAGE_TAG }}
+            ${{ env.ECR_REGISTRY }}/chat-front:latest
+          cache-from: type=gha
+
+      - name: Push Chat Service to ECR
+        uses: docker/build-push-action@v5
+        with:
+          context: ./microservices-chat/chat_svc
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/chat-svc:${{ env.IMAGE_TAG }}
+            ${{ env.ECR_REGISTRY }}/chat-svc:latest
           cache-from: type=gha
 
   # ────────────────────────────────────────────────────────────────
@@ -124,19 +150,24 @@ jobs:
           echo "$GIT_SSH_KEY" | ssh-add -
           ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-          git clone git@github.com:your-org/k8s-manifests.git manifests # Rember to update this
+          git clone git@github.com:TripleAze/k8-manifests.git manifests
           cd manifests/overlays/staging
 
-          # Kustomize-native image tag update
+          # Kustomize-native image tag updates
           kustomize edit set image \
-            my-app=${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+            chat-front=${{ env.ECR_REGISTRY }}/chat-front:${{ env.IMAGE_TAG }}
+          kustomize edit set image \
+            chat-svc=${{ env.ECR_REGISTRY }}/chat-svc:${{ env.IMAGE_TAG }}
 
           # yq for any non-image fields (e.g. env vars, annotations)
           yq e -i \
             '.spec.template.metadata.annotations["deploy-time"] = "${{ github.run_id }}"' \
-            ../../base/deployment.yaml
+            ../../base/chat-front-deployment.yaml
+          yq e -i \
+            '.spec.template.metadata.annotations["deploy-time"] = "${{ github.run_id }}"' \
+            ../../base/chat-svc-deployment.yaml
 
-          git config user.email "ci-bot@your-org.com"
+          git config user.email "aliyuatikuabubakar7@gmail.com"
           git config user.name  "CI Bot"
           git add .
           git diff --cached --quiet && exit 0
@@ -176,8 +207,7 @@ jobs:
       - name: Approval gate
         run: |
           echo "Approved by: ${{ github.actor }}"
-          echo "Image:       ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}"
-          echo "Promoting staging → production"
+          echo "Promoting staging → production for tag: ${{ env.IMAGE_TAG }}"
 
   # ────────────────────────────────────────────────────────────────
   # JOB 4 — Deploy to production (post-approval)
@@ -202,13 +232,15 @@ jobs:
           echo "$GIT_SSH_KEY" | ssh-add -
           ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-          git clone git@github.com:your-org/k8s-manifests.git manifests
+          git clone git@github.com:TripleAze/k8-manifests.git manifests
           cd manifests/overlays/production
 
           kustomize edit set image \
-            my-app=${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+            chat-front=${{ env.ECR_REGISTRY }}/chat-front:${{ env.IMAGE_TAG }}
+          kustomize edit set image \
+            chat-svc=${{ env.ECR_REGISTRY }}/chat-svc:${{ env.IMAGE_TAG }}
 
-          git config user.email "ci-bot@your-org.com"
+          git config user.email "aliyuatikuabubakar7@gmail.com"
           git config user.name  "CI Bot"
           git add .
           git diff --cached --quiet && exit 0

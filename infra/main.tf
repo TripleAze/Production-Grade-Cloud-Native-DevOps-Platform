@@ -102,13 +102,13 @@ module "acm" {
 
 
 module "ecr" {
-  source = "terraform-aws-modules/ecr/aws"
+  source   = "terraform-aws-modules/ecr/aws"
+  for_each = toset(var.ecr_names)
 
-  repository_name = var.ecr_name
+  repository_name = each.key
 
-  repository_image_scan_on_push     = var.ecr_scan_on_push
-  repository_lifecycle_policy       = var.ecr_lifecycle_policy
-
+  repository_image_scan_on_push   = var.ecr_scan_on_push
+  repository_lifecycle_policy     = var.ecr_lifecycle_policy
   repository_image_tag_mutability = "MUTABLE"
 
   tags = var.ecr_tags

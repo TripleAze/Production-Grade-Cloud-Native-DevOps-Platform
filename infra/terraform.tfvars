@@ -2,7 +2,7 @@
 vpc_name   = "solo-devops-vpc"
 vpc_cidr   = "70.0.0.0/16"
 aws_region  = "us-east-1"
-domain_name = "abu-eks.cloud-ip.cc"
+domain_name = "atiqabubakar.sbs"
 
 azs = ["us-east-1a", "us-east-1b"]
 
@@ -16,7 +16,7 @@ environment = "dev"
 project     = "solo-devops"
 
 # ECR values
-ecr_name         = "solo-devops"
+ecr_names        = ["chat-front", "chat-svc"]
 ecr_scan_on_push = true
 
 ecr_lifecycle_policy = <<EOF
@@ -42,8 +42,3 @@ EOF
 ecr_tags = {
   Terraform = "true"
 }
-
-
-# RDS Management: AWS now handles Secrets Manager automatically.
-# No manual secret variables required which improves security.
-

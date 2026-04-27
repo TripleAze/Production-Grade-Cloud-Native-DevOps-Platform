@@ -40,8 +40,8 @@ variable "project" {
 
 
 # ECR Variables
-variable "ecr_name" {
-  type = string
+variable "ecr_names" {
+  type = list(string)
 }
 
 variable "ecr_scan_on_push" {
